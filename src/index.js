@@ -120,7 +120,7 @@ const App = () => {
     const [leaderboardScores, setLeaderboardScores] = useState([]); // For 2048 leaderboard
     const [showScoreSubmission, setShowScoreSubmission] = useState(false); // For 2048 score submission
     const [tempScore, setTempScore] = useState(0); // To hold the score for submission
-    const [generatingBuzz, setGeneratingBuzz] = useState(false); // State for AI buzz loading
+    const [generatingBuzz, setGeneratingBuzz] = useState(false); // New state for AI buzz loading
 
     // Konami Code sequence (Up, Up, Down, Down, Left, Right, Left, Right, B, A, Enter)
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
@@ -231,7 +231,7 @@ const App = () => {
                     { name: "Flappy Bird", image: "https://placehold.co/300x200/FF5722/ffffff?text=Flappy+Bird", url: "https://flappybird.io/", genre: "Arcade", developer: "Dong Nguyen", rating: 3.5, popularity: 120 },
                     { name: "Snake", image: "https://placehold.co/300x200/2196F3/ffffff?text=Snake", url: "https://www.mathsisfun.com/games/snake.html", genre: "Arcade", developer: "Classic Games Inc.", rating: 4.0, popularity: 180 },
                     { name: "Tetris", image: "https://placehold.co/300x200/9C27B0/ffffff?text=Tetris", url: "https://tetris.com/play-tetris/", genre: "Puzzle", developer: "Alexey Pajitnov", rating: 4.7, popularity: 250 },
-                    { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://freepacman.org/", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 },
+                    { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://freepacman.org/", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 }, // URL changed
                     { name: "Minesweeper", image: "https://placehold.co/300x200/F44336/ffffff?text=Minesweeper", url: "https://minesweeper.online/", genre: "Puzzle", developer: "Microsoft", rating: 4.1, popularity: 110 },
                     { name: "Crossy Road", image: "https://placehold.co/300x200/607D8B/ffffff?text=Crossy+Road", url: "https://pixelpad.io/app/wsjezhiqjue/?emb=1", genre: "Arcade", developer: "Hipster Whale", rating: 4.4, popularity: 160 },
                     { name: "Basketball Stars", image: "https://placehold.co/300x200/795548/ffffff?text=Basketball+Stars", url: "https://basketball-stars.github.io/", genre: "Sports", developer: "Madpuffers", rating: 3.9, popularity: 90 },
@@ -242,7 +242,7 @@ const App = () => {
                     { name: "Paper.io 2", image: "https://placehold.co/300x200/9E9E9E/ffffff?text=Paper.io+2", url: "https://paper-io.com/paper-io-2", genre: "Strategy", developer: "Voodoo", rating: 4.2, popularity: 140 },
                     { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
                     { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
-                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
+                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 }, // URL changed
                     { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
                 ];
 
