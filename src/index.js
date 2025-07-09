@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext, useRef } from 'r
 import { createRoot } from 'react-dom/client';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, query, onSnapshot, orderBy, limit, addDoc, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, onSnapshot, orderBy, limit, addDoc, getDocs, doc, setDoc } from 'firebase/firestore'; // Added doc and setDoc
 
 // --- Firebase Initialization ---
 // Retrieve Firebase configuration from environment variables
@@ -220,38 +220,67 @@ const App = () => {
         const unsubscribe = onSnapshot(gamesCollectionRef, async (snapshot) => {
             let fetchedGames = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            // If no games exist, populate with default data
+            const defaultGamesToPopulate = [
+                { name: "Slope 2", image: "https://placehold.co/300x200/5C007C/ffffff?text=Slope+2", url: "https://2slope.github.io/", genre: "Arcade", developer: "RoboGames", rating: 4.2, popularity: 150 },
+                { name: "Italian Brainrot Clicker", image: "https://placehold.co/300x200/004080/ffffff?text=Italian+Brainrot+Clicker", url: "https://italianbrainrotclicker.pages.dev/", genre: "Clicker", developer: "Pasta Devs", rating: 3.8, popularity: 80 },
+                { name: "2048", image: "https://placehold.co/300x200/4CAF50/ffffff?text=2048", url: "https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html", genre: "Puzzle", developer: "Gabriele Cirulli", rating: 4.5, popularity: 200 },
+                { name: "Flappy Bird", image: "https://placehold.co/300x200/FF5722/ffffff?text=Flappy+Bird", url: "https://flappybird.io/", genre: "Arcade", developer: "Dong Nguyen", rating: 3.5, popularity: 120 },
+                { name: "Snake", image: "https://placehold.co/300x200/2196F3/ffffff?text=Snake", url: "https://www.mathsisfun.com/games/snake.html", genre: "Arcade", developer: "Classic Games Inc.", rating: 4.0, popularity: 180 },
+                { name: "Tetris", image: "https://placehold.co/300x200/9C27B0/ffffff?text=Tetris", url: "https://tetris.com/play-tetris/", genre: "Puzzle", developer: "Alexey Pajitnov", rating: 4.7, popularity: 250 },
+                { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://freepacman.org/", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 },
+                { name: "Minesweeper", image: "https://placehold.co/300x200/F44336/ffffff?text=Minesweeper", url: "https://minesweeper.online/", genre: "Puzzle", developer: "Microsoft", rating: 4.1, popularity: 110 },
+                { name: "Crossy Road", image: "https://placehold.co/300x200/607D8B/ffffff?text=Crossy+Road", url: "https://pixelpad.io/app/wsjezhiqjue/?emb=1", genre: "Arcade", developer: "Hipster Whale", rating: 4.4, popularity: 160 },
+                { name: "Basketball Stars", image: "https://placehold.co/300x200/795548/ffffff?text=Basketball+Stars", url: "https://basketball-stars.github.io/", genre: "Sports", developer: "Madpuffers", rating: 3.9, popularity: 90 },
+                { name: "Subway Surfers", image: "https://placehold.co/300x200/E91E63/ffffff?text=Subway+Surfers", url: "https://staticquasar931.github.io/Subway-Surfers/", genre: "Runner", developer: "Kiloo & SYBO Games", rating: 4.6, popularity: 220 },
+                { name: "Run 3", image: "https://placehold.co/300x200/03A9F4/ffffff?text=Run+3", url: "https://schoolisntfun.github.io/mnt/run3.html", genre: "Platformer", developer: "Kongregate", rating: 4.0, popularity: 130 },
+                { name: "Among Us", image: "https://placehold.co/300x200/8BC34A/ffffff?text=Among+Us", url: "https://universal-games-unblocked.vercel.app/projects/among-us/index.html", genre: "Party", developer: "Innersloth", rating: 4.8, popularity: 300 },
+                { name: "Vex 5", image: "https://placehold.co/300x200/FFC107/000000?text=Vex+5", url: "https://vexgame-unblocked.github.io/", genre: "Platformer", developer: "Agame", rating: 4.1, popularity: 100 },
+                { name: "Paper.io 2", image: "https://placehold.co/300x200/9E9E9E/ffffff?text=Paper.io+2", url: "https://paper-io.com/paper-io-2", genre: "Strategy", developer: "Voodoo", rating: 4.2, popularity: 140 },
+                { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
+                { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
+                { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
+                { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
+            ];
+
+            // If Firestore is empty, populate it with default data
             if (fetchedGames.length === 0) {
                 showMessage("Populating initial game data...", 3000);
-                // Updated defaultGames array with user-provided links and genres/developers
-                const defaultGames = [
-                    { name: "Slope 2", image: "https://placehold.co/300x200/5C007C/ffffff?text=Slope+2", url: "https://2slope.github.io/", genre: "Arcade", developer: "RoboGames", rating: 4.2, popularity: 150 },
-                    { name: "Italian Brainrot Clicker", image: "https://placehold.co/300x200/004080/ffffff?text=Italian+Brainrot+Clicker", url: "https://italianbrainrotclicker.pages.dev/", genre: "Clicker", developer: "Pasta Devs", rating: 3.8, popularity: 80 },
-                    { name: "2048", image: "https://placehold.co/300x200/4CAF50/ffffff?text=2048", url: "https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html", genre: "Puzzle", developer: "Gabriele Cirulli", rating: 4.5, popularity: 200 },
-                    { name: "Flappy Bird", image: "https://placehold.co/300x200/FF5722/ffffff?text=Flappy+Bird", url: "https://flappybird.io/", genre: "Arcade", developer: "Dong Nguyen", rating: 3.5, popularity: 120 },
-                    { name: "Snake", image: "https://placehold.co/300x200/2196F3/ffffff?text=Snake", url: "https://www.mathsisfun.com/games/snake.html", genre: "Arcade", developer: "Classic Games Inc.", rating: 4.0, popularity: 180 },
-                    { name: "Tetris", image: "https://placehold.co/300x200/9C27B0/ffffff?text=Tetris", url: "https://tetris.com/play-tetris/", genre: "Puzzle", developer: "Alexey Pajitnov", rating: 4.7, popularity: 250 },
-                    { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://freepacman.org/", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 }, // URL changed
-                    { name: "Minesweeper", image: "https://placehold.co/300x200/F44336/ffffff?text=Minesweeper", url: "https://minesweeper.online/", genre: "Puzzle", developer: "Microsoft", rating: 4.1, popularity: 110 },
-                    { name: "Crossy Road", image: "https://placehold.co/300x200/607D8B/ffffff?text=Crossy+Road", url: "https://pixelpad.io/app/wsjezhiqjue/?emb=1", genre: "Arcade", developer: "Hipster Whale", rating: 4.4, popularity: 160 },
-                    { name: "Basketball Stars", image: "https://placehold.co/300x200/795548/ffffff?text=Basketball+Stars", url: "https://basketball-stars.github.io/", genre: "Sports", developer: "Madpuffers", rating: 3.9, popularity: 90 },
-                    { name: "Subway Surfers", image: "https://placehold.co/300x200/E91E63/ffffff?text=Subway+Surfers", url: "https://staticquasar931.github.io/Subway-Surfers/", genre: "Runner", developer: "Kiloo & SYBO Games", rating: 4.6, popularity: 220 },
-                    { name: "Run 3", image: "https://placehold.co/300x200/03A9F4/ffffff?text=Run+3", url: "https://schoolisntfun.github.io/mnt/run3.html", genre: "Platformer", developer: "Kongregate", rating: 4.0, popularity: 130 },
-                    { name: "Among Us", image: "https://placehold.co/300x200/8BC34A/ffffff?text=Among+Us", url: "https://universal-games-unblocked.vercel.app/projects/among-us/index.html", genre: "Party", developer: "Innersloth", rating: 4.8, popularity: 300 },
-                    { name: "Vex 5", image: "https://placehold.co/300x200/FFC107/000000?text=Vex+5", url: "https://vexgame-unblocked.github.io/", genre: "Platformer", developer: "Agame", rating: 4.1, popularity: 100 },
-                    { name: "Paper.io 2", image: "https://placehold.co/300x200/9E9E9E/ffffff?text=Paper.io+2", url: "https://paper-io.com/paper-io-2", genre: "Strategy", developer: "Voodoo", rating: 4.2, popularity: 140 },
-                    { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
-                    { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
-                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 }, // URL changed
-                    { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
-                ];
-
-                for (const game of defaultGames) {
+                for (const game of defaultGamesToPopulate) {
                     await addDoc(gamesCollectionRef, game);
                 }
+                // After adding, re-fetch or manually set to ensure state is consistent
+                setGames(defaultGamesToPopulate.map(game => ({ id: 'temp-id-' + Math.random(), ...game }))); // Assign temp IDs for immediate rendering
+                setFilteredGames(defaultGamesToPopulate.map(game => ({ id: 'temp-id-' + Math.random(), ...game })));
+            } else {
+                // Check for specific game updates (Pac-Man and Solitaire)
+                const pacmanDoc = fetchedGames.find(g => g.name === "Pac-Man");
+                const solitaireDoc = fetchedGames.find(g => g.name === "Solitaire");
+
+                const defaultPacman = defaultGamesToPopulate.find(g => g.name === "Pac-Man");
+                const defaultSolitaire = defaultGamesToPopulate.find(g => g.name === "Solitaire");
+
+                let needsUpdate = false;
+                if (pacmanDoc && defaultPacman && pacmanDoc.url !== defaultPacman.url) {
+                    console.log(`Updating Pac-Man URL from ${pacmanDoc.url} to ${defaultPacman.url}`);
+                    await setDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/games`, pacmanDoc.id), defaultPacman, { merge: true });
+                    needsUpdate = true;
+                }
+                if (solitaireDoc && defaultSolitaire && solitaireDoc.url !== defaultSolitaire.url) {
+                    console.log(`Updating Solitaire URL from ${solitaireDoc.url} to ${defaultSolitaire.url}`);
+                    await setDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/games`, solitaireDoc.id), defaultSolitaire, { merge: true });
+                    needsUpdate = true;
+                }
+
+                // If any updates were made, re-fetch the data to ensure the local state is fresh
+                if (needsUpdate) {
+                    const updatedSnapshot = await getDocs(gamesCollectionRef);
+                    fetchedGames = updatedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    showMessage("Game URLs updated in Firestore!", 2000);
+                }
+
+                setGames(fetchedGames);
+                setFilteredGames(fetchedGames);
             }
-            setGames(fetchedGames);
-            setFilteredGames(fetchedGames); // Initialize filtered games with all games
         }, (error) => {
             console.error("Error fetching games:", error);
             showMessage("Failed to load games. Please try again later.", 5000);
