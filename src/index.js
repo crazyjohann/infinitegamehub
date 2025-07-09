@@ -120,6 +120,7 @@ const App = () => {
     const [leaderboardScores, setLeaderboardScores] = useState([]); // For 2048 leaderboard
     const [showScoreSubmission, setShowScoreSubmission] = useState(false); // For 2048 score submission
     const [tempScore, setTempScore] = useState(0); // To hold the score for submission
+    const [generatingBuzz, setGeneratingBuzz] = useState(false); // State for AI buzz loading
 
     // Konami Code sequence (Up, Up, Down, Down, Left, Right, Left, Right, B, A, Enter)
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
@@ -150,6 +151,44 @@ const App = () => {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
+        }
+    };
+
+    // Function to generate new buzz messages using Gemini API
+    const generateNewBuzzMessages = async () => {
+        setGeneratingBuzz(true);
+        try {
+            const prompt = "Generate 5 short, engaging, and positive news-feed style 'buzz' messages for a gaming hub website. Each message should be a single sentence. Examples: 'New High Score in 2048! Can you beat it?', 'Explore the cosmos of games!'. Ensure variety in topics (new games, events, tips, general excitement).";
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas will automatically provide this
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                // Split the text into individual messages, assuming they are separated by newlines or similar
+                const newMessages = text.split('\n').filter(msg => msg.trim() !== '');
+                setPlayerBuzzMessages(newMessages);
+                setCurrentBuzzIndex(0); // Reset to first new message
+                showMessage("New buzz messages generated!", 3000);
+            } else {
+                showMessage("Failed to generate new buzz messages.", 3000);
+            }
+        } catch (error) {
+            console.error("Error generating buzz messages:", error);
+            showMessage("Error generating buzz messages. Try again.", 3000);
+        } finally {
+            setGeneratingBuzz(false);
         }
     };
 
@@ -184,6 +223,7 @@ const App = () => {
             // If no games exist, populate with default data
             if (fetchedGames.length === 0) {
                 showMessage("Populating initial game data...", 3000);
+                // Updated defaultGames array with user-provided links and genres/developers
                 const defaultGames = [
                     { name: "Slope 2", image: "https://placehold.co/300x200/5C007C/ffffff?text=Slope+2", url: "https://2slope.github.io/", genre: "Arcade", developer: "RoboGames", rating: 4.2, popularity: 150 },
                     { name: "Italian Brainrot Clicker", image: "https://placehold.co/300x200/004080/ffffff?text=Italian+Brainrot+Clicker", url: "https://italianbrainrotclicker.pages.dev/", genre: "Clicker", developer: "Pasta Devs", rating: 3.8, popularity: 80 },
@@ -191,7 +231,7 @@ const App = () => {
                     { name: "Flappy Bird", image: "https://placehold.co/300x200/FF5722/ffffff?text=Flappy+Bird", url: "https://flappybird.io/", genre: "Arcade", developer: "Dong Nguyen", rating: 3.5, popularity: 120 },
                     { name: "Snake", image: "https://placehold.co/300x200/2196F3/ffffff?text=Snake", url: "https://www.mathsisfun.com/games/snake.html", genre: "Arcade", developer: "Classic Games Inc.", rating: 4.0, popularity: 180 },
                     { name: "Tetris", image: "https://placehold.co/300x200/9C27B0/ffffff?text=Tetris", url: "https://tetris.com/play-tetris/", genre: "Puzzle", developer: "Alexey Pajitnov", rating: 4.7, popularity: 250 },
-                    { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://itch.io/embed-upload/5398792?color=57a5eb", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 },
+                    { name: "Pac-Man", image: "https://placehold.co/300x200/FFEB3B/000000?text=Pac-Man", url: "https://freepacman.org/", genre: "Arcade", developer: "Namco", rating: 4.3, popularity: 190 },
                     { name: "Minesweeper", image: "https://placehold.co/300x200/F44336/ffffff?text=Minesweeper", url: "https://minesweeper.online/", genre: "Puzzle", developer: "Microsoft", rating: 4.1, popularity: 110 },
                     { name: "Crossy Road", image: "https://placehold.co/300x200/607D8B/ffffff?text=Crossy+Road", url: "https://pixelpad.io/app/wsjezhiqjue/?emb=1", genre: "Arcade", developer: "Hipster Whale", rating: 4.4, popularity: 160 },
                     { name: "Basketball Stars", image: "https://placehold.co/300x200/795548/ffffff?text=Basketball+Stars", url: "https://basketball-stars.github.io/", genre: "Sports", developer: "Madpuffers", rating: 3.9, popularity: 90 },
@@ -202,8 +242,8 @@ const App = () => {
                     { name: "Paper.io 2", image: "https://placehold.co/300x200/9E9E9E/ffffff?text=Paper.io+2", url: "https://paper-io.com/paper-io-2", genre: "Strategy", developer: "Voodoo", rating: 4.2, popularity: 140 },
                     { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
                     { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
-                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitaire.org/solitaire/" },
-                    { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html" }
+                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
+                    { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
                 ];
 
                 for (const game of defaultGames) {
@@ -588,9 +628,12 @@ const App = () => {
                 }
 
                 .header-glass {
-                    background: var(--header-glass-bg);
-                    border: 1px solid var(--border-color-subtle);
-                    box-shadow: 0 4px 20px 0 var(--shadow-color-dark);
+                    background: var(--header-glass-bg); /* Use CSS variable */
+                    backdrop-filter: blur(10px); /* Frosted glass effect */
+                    -webkit-backdrop-filter: blur(10px); /* For Safari */
+                    border: 1px solid var(--border-color-subtle); /* Use CSS variable */
+                    box-shadow: 0 4px 20px 0 var(--shadow-color-dark); /* Use CSS variable */
+                    border-radius: 15px; /* Explicitly set rounded corners for the header */
                     padding: 20px 40px;
                     margin-bottom: 2.5rem;
                 }
@@ -601,7 +644,7 @@ const App = () => {
                     -webkit-backdrop-filter: blur(12px);
                     border: 1px solid var(--border-color-card);
                     box-shadow: 0 6px 20px 0 var(--shadow-color-dark);
-                    border-radius: 12px;
+                    border-radius: 20px; /* Increased border-radius for more rounded corners */
                     color: var(--text-color);
                     padding: 18px 24px 18px 60px;
                     font-size: 1rem;
@@ -845,9 +888,27 @@ const App = () => {
                     {playerBuzzMessages[currentBuzzIndex]}
                 </span>
             </div>
+            {/* New button for AI-powered buzz messages */}
+            <div className="flex justify-center mt-4">
+                <button
+                    onClick={generateNewBuzzMessages}
+                    disabled={generatingBuzz}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 flex items-center justify-center"
+                >
+                    {generatingBuzz ? (
+                        <>
+                            <i className="fas fa-spinner fa-spin mr-2"></i> Generating Buzz...
+                        </>
+                    ) : (
+                        <>
+                            <i className="fas fa-magic mr-2"></i> Generate New Buzz
+                        </>
+                    )}
+                </button>
+            </div>
 
             {/* Search, Filter, Sort Controls */}
-            <div className="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
                 <div className="relative w-full sm:w-1/2">
                     <input
                         type="text"
@@ -1018,7 +1079,7 @@ const App = () => {
             {/* Info Trigger for Hidden Message */}
             <button
                 onClick={() => showMessage("You've uncovered a hidden dimension! Welcome, seeker.", 5000)}
-                className="fixed bottom-4 right-4 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-300"
+                className="fixed bottom-4 right-4 z-[1000] p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-300"
                 aria-label="Show Info"
             >
                 <i className="fas fa-info"></i>
