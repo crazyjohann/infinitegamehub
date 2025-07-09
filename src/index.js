@@ -1,15 +1,33 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
-import { createRoot } from 'react-dom/client'; // Import createRoot for React 18+
+import { createRoot } from 'react-dom/client';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, query, onSnapshot, orderBy, limit, addDoc, getDocs } from 'firebase/firestore';
 
 // --- Firebase Initialization ---
-// Global variables provided by the Canvas environment
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Fallback for local testing
+// Retrieve Firebase configuration from environment variables
+// Note: Create React App (react-scripts) requires environment variables to be prefixed with REACT_APP_
+// Only the essential configuration properties are listed here.
+// Other properties (storageBucket, messagingSenderId, measurementId) are optional
+// and only needed if you specifically use those Firebase services.
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  // appId is crucial for Firestore paths in this setup
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  // Optional Firebase config properties (uncomment and add if needed):
+  // storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  // messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  // measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+};
 
 // Initialize Firebase App
+// Add a check to ensure projectId exists before initializing
+if (!firebaseConfig.projectId) {
+    console.error("Firebase 'projectId' is not provided in environment variables. Firebase will not initialize.");
+    // You might want to display a user-friendly error message on the UI here.
+}
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -28,6 +46,7 @@ const AuthProvider = ({ children }) => {
                 setCurrentUser(user);
             } else {
                 // Attempt to sign in with custom token if available, otherwise anonymously
+                // __initial_auth_token is for Canvas environment, not for Render deployment
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         await signInWithCustomToken(auth, __initial_auth_token);
@@ -36,6 +55,7 @@ const AuthProvider = ({ children }) => {
                         await signInAnonymously(auth); // Fallback to anonymous sign-in
                     }
                 } else {
+                    // For Render, we primarily rely on anonymous sign-in if no specific user auth is set up
                     await signInAnonymously(auth); // Sign in anonymously if no custom token
                 }
             }
@@ -141,7 +161,8 @@ const App = () => {
 
     // Fetch games from Firestore
     useEffect(() => {
-        if (!db || loadingAuth) return;
+        // Only attempt to fetch if db is initialized and auth state is loaded
+        if (!db || loadingAuth || !firebaseConfig.projectId) return;
 
         const gamesCollectionRef = collection(db, `artifacts/${appId}/public/data/games`);
         const unsubscribe = onSnapshot(gamesCollectionRef, async (snapshot) => {
@@ -184,11 +205,12 @@ const App = () => {
         });
 
         return () => unsubscribe(); // Cleanup subscription
-    }, [db, loadingAuth]); // Re-run if db or auth loading state changes
+    }, [db, loadingAuth, firebaseConfig.projectId]); // Re-run if db or auth loading state changes
 
     // Fetch leaderboard scores for 2048
     useEffect(() => {
-        if (!db || loadingAuth) return;
+        // Only attempt to fetch if db is initialized and auth state is loaded
+        if (!db || loadingAuth || !firebaseConfig.projectId) return;
 
         const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard_2048`);
         // Order by score in descending order and limit to top 10
@@ -203,7 +225,7 @@ const App = () => {
         });
 
         return () => unsubscribe();
-    }, [db, loadingAuth]);
+    }, [db, loadingAuth, firebaseConfig.projectId]);
 
     // --- Game Filtering and Sorting ---
     useEffect(() => {
@@ -411,6 +433,11 @@ const App = () => {
     const handleScoreSubmission = async (scoreValue) => {
         if (!currentUser || !db) {
             showMessage("Please sign in to submit scores.", 3000);
+            return;
+        }
+        // Ensure Firebase is initialized before trying to access Firestore
+        if (!firebaseConfig.projectId) {
+            showMessage("Firebase is not configured. Cannot submit score.", 3000);
             return;
         }
 
@@ -908,7 +935,7 @@ const App = () => {
                                 placeholder="Enter your score"
                                 value={tempScore}
                                 onChange={(e) => setTempScore(parseInt(e.target.value) || 0)}
-                                className="p-3 rounded-lg glass-effect bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg glass-effect bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                             <button
                                 onClick={() => handleScoreSubmission(tempScore)}
@@ -1017,7 +1044,7 @@ const App = () => {
 };
 
 // This is the standard way to render a React app into the DOM in React 18+
-// In a real project, this would be in src/index.js or src/main.jsx
+// This part should remain here in src/index.js as it's the entry point for rendering.
 const container = document.getElementById('root');
 if (container) {
     const root = createRoot(container);
@@ -1033,4 +1060,6 @@ if (container) {
 }
 
 // Export AppProvider as default if this file is treated as the main entry for a build system
+// This line is primarily for the Canvas environment's internal rendering,
+// it's not strictly necessary for a standard Create React App build if App is rendered directly.
 export default AppProvider;
