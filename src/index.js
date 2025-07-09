@@ -45,23 +45,23 @@ const AuthProvider = ({ children }) => {
             if (user) {
                 setCurrentUser(user);
             } else {
-                // Attempt to sign in with custom token if available, otherwise anonymously
                 // __initial_auth_token is for Canvas environment, not for Render deployment
+                // This block will now only run in the Canvas environment
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         await signInWithCustomToken(auth, __initial_auth_token);
+                        setCurrentUser(auth.currentUser);
                     } catch (error) {
                         console.error("Error signing in with custom token (Canvas only):", error);
-                        // Fallback to anonymous sign-in if custom token fails (for Canvas)
                         try {
                             await signInAnonymously(auth);
-                            setCurrentUser(auth.currentUser); // Set user after anonymous sign-in
+                            setCurrentUser(auth.currentUser);
                         } catch (anonError) {
                             console.error("Error with anonymous sign-in (Canvas fallback):", anonError);
                         }
                     }
                 } else {
-                    // For Render, we primarily rely on anonymous sign-in
+                    // For Render deployment, always attempt anonymous sign-in here
                     try {
                         await signInAnonymously(auth); // Sign in anonymously
                         setCurrentUser(auth.currentUser); // Set user after successful anonymous sign-in
@@ -93,7 +93,7 @@ const App = () => {
     const [fullscreenGameUrl, setFullscreenGameUrl] = useState(null);
     const [secretMessage, setSecretMessage] = useState('');
     const [secretMessageVisible, setSecretMessageVisible] = useState(false);
-    const [secretModeActive, setSecretModeActive] = useState(false);
+    const [secretModeActive, setSecretModeActive] = useState(0); // Changed to 0 for initial state
     const [currentHue, setCurrentHue] = useState(0);
     const [luckyCharmClickCount, setLuckyCharmClickCount] = useState(0);
     const LUCKY_CHARM_THRESHOLD = 7;
@@ -123,7 +123,7 @@ const App = () => {
 
     // Konami Code sequence (Up, Up, Down, Down, Left, Right, Left, Right, B, A, Enter)
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
-    let konamiCodePosition = 0; // Use a ref for mutable state in event listener
+    const konamiCodePositionRef = useRef(0); // Use a ref for mutable state in event listener
 
     const audioRef = useRef(null); // Ref for the audio element
 
@@ -176,7 +176,8 @@ const App = () => {
         // Only attempt to fetch if db is initialized and auth state is loaded
         if (!db || loadingAuth || !firebaseConfig.projectId) return;
 
-        const gamesCollectionRef = collection(db, `artifacts/${appId}/public/data/games`);
+        // Use firebaseConfig.appId here instead of the global appId variable
+        const gamesCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/public/data/games`);
         const unsubscribe = onSnapshot(gamesCollectionRef, async (snapshot) => {
             let fetchedGames = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -217,14 +218,15 @@ const App = () => {
         });
 
         return () => unsubscribe(); // Cleanup subscription
-    }, [db, loadingAuth, firebaseConfig.projectId]); // Re-run if db or auth loading state changes
+    }, [db, loadingAuth, firebaseConfig.projectId, firebaseConfig.appId]); // Re-run if db or auth loading state changes
 
     // Fetch leaderboard scores for 2048
     useEffect(() => {
         // Only attempt to fetch if db is initialized and auth state is loaded
         if (!db || loadingAuth || !firebaseConfig.projectId) return;
 
-        const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard_2048`);
+        // Use firebaseConfig.appId here instead of the global appId variable
+        const leaderboardCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/public/data/leaderboard_2048`);
         // Order by score in descending order and limit to top 10
         const q = query(leaderboardCollectionRef, orderBy("score", "desc"), limit(10));
 
@@ -237,7 +239,7 @@ const App = () => {
         });
 
         return () => unsubscribe();
-    }, [db, loadingAuth, firebaseConfig.projectId]);
+    }, [db, loadingAuth, firebaseConfig.projectId, firebaseConfig.appId]);
 
     // --- Game Filtering and Sorting ---
     useEffect(() => {
@@ -272,14 +274,14 @@ const App = () => {
         let hueRotationInterval;
         const handleKeyDown = (event) => {
             const key = event.key.toLowerCase();
-            if (key === konamiCode[konamiCodePosition]) {
-                konamiCodePosition++;
-                if (konamiCodePosition === konamiCode.length) {
+            if (key === konamiCode[konamiCodePositionRef.current]) {
+                konamiCodePositionRef.current++;
+                if (konamiCodePositionRef.current === konamiCode.length) {
                     setSecretModeActive(prev => !prev); // Toggle the mode
-                    konamiCodePosition = 0; // Reset for next time
+                    konamiCodePositionRef.current = 0; // Reset for next time
                 }
             } else {
-                konamiCodePosition = 0; // Reset if incorrect key is pressed
+                konamiCodePositionRef.current = 0; // Reset if incorrect key is pressed
             }
         };
 
@@ -453,7 +455,8 @@ const App = () => {
             return;
         }
 
-        const scoreRef = collection(db, `artifacts/${appId}/public/data/leaderboard_2048`);
+        // Use firebaseConfig.appId here instead of the global appId variable
+        const scoreRef = collection(db, `artifacts/${firebaseConfig.appId}/public/data/leaderboard_2048`);
         try {
             await addDoc(scoreRef, {
                 userId: currentUser.uid,
@@ -1074,4 +1077,4 @@ if (container) {
 // Export AppProvider as default if this file is treated as the main entry for a build system
 // This line is primarily for the Canvas environment's internal rendering,
 // it's not strictly necessary for a standard Create React App build if App is rendered directly.
-export default AppProvid
+export default AppProvider;
