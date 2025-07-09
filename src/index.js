@@ -51,15 +51,27 @@ const AuthProvider = ({ children }) => {
                     try {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } catch (error) {
-                        console.error("Error signing in with custom token:", error);
-                        await signInAnonymously(auth); // Fallback to anonymous sign-in
+                        console.error("Error signing in with custom token (Canvas only):", error);
+                        // Fallback to anonymous sign-in if custom token fails (for Canvas)
+                        try {
+                            await signInAnonymously(auth);
+                            setCurrentUser(auth.currentUser); // Set user after anonymous sign-in
+                        } catch (anonError) {
+                            console.error("Error with anonymous sign-in (Canvas fallback):", anonError);
+                        }
                     }
                 } else {
-                    // For Render, we primarily rely on anonymous sign-in if no specific user auth is set up
-                    await signInAnonymously(auth); // Sign in anonymously if no custom token
+                    // For Render, we primarily rely on anonymous sign-in
+                    try {
+                        await signInAnonymously(auth); // Sign in anonymously
+                        setCurrentUser(auth.currentUser); // Set user after successful anonymous sign-in
+                    } catch (anonError) {
+                        console.error("Error with anonymous sign-in (Render):", anonError);
+                        // Optionally, display a message to the user that authentication failed
+                    }
                 }
             }
-            setLoadingAuth(false); // Auth state is ready
+            setLoadingAuth(false); // Auth state is ready, whether successful or failed
         });
 
         return () => unsubscribe(); // Cleanup subscription on unmount
@@ -189,8 +201,8 @@ const App = () => {
                     { name: "Paper.io 2", image: "https://placehold.co/300x200/9E9E9E/ffffff?text=Paper.io+2", url: "https://paper-io.com/paper-io-2", genre: "Strategy", developer: "Voodoo", rating: 4.2, popularity: 140 },
                     { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
                     { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
-                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitaire.org/solitaire/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
-                    { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
+                    { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitaire.org/solitaire/" },
+                    { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html" }
                 ];
 
                 for (const game of defaultGames) {
@@ -1062,4 +1074,4 @@ if (container) {
 // Export AppProvider as default if this file is treated as the main entry for a build system
 // This line is primarily for the Canvas environment's internal rendering,
 // it's not strictly necessary for a standard Create React App build if App is rendered directly.
-export default AppProvider;
+export default AppProvid
