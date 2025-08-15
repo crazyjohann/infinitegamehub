@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext, useRef } from 'r
 import { createRoot } from 'react-dom/client';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, query, onSnapshot, orderBy, limit, addDoc, getDocs, doc, setDoc } from 'firebase/firestore'; // Added doc and setDoc
+import { getFirestore, collection, query, onSnapshot, orderBy, limit, addDoc, getDocs, doc, setDoc } from 'firebase/firestore';
 
 // --- Firebase Initialization ---
 // Retrieve Firebase configuration from environment variables
@@ -239,9 +239,8 @@ const App = () => {
                 { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
                 { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
                 { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
-                { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }
+                { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }, // <-- COMMA ADDED HERE
                 { name: "Roblox", image: "https://placehold.co/300x200/5C007C/ffffff?text=Roblox", url: "https://www.roblox.com", genre: "Hub", developer: "Roblox Corporation", rating: 5.0, popularity: 999 }
-
             ];
 
             // If Firestore is empty, populate it with default data
