@@ -239,7 +239,7 @@ const App = () => {
                 { name: "Moto X3M", image: "https://placehold.co/300x200/FF7F50/ffffff?text=Moto+X3M", url: "https://moto-x3m.io/", genre: "Racing", developer: "Madpuffers", rating: 4.5, popularity: 170 },
                 { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
                 { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
-                { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 }, // <-- COMMA ADDED HERE
+                { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 },
                 { name: "Roblox", image: "https://placehold.co/300x200/5C007C/ffffff?text=Roblox", url: "https://www.roblox.com", genre: "Hub", developer: "Roblox Corporation", rating: 5.0, popularity: 999 }
             ];
 
@@ -253,30 +253,29 @@ const App = () => {
                 setGames(defaultGamesToPopulate.map(game => ({ id: 'temp-id-' + Math.random(), ...game }))); // Assign temp IDs for immediate rendering
                 setFilteredGames(defaultGamesToPopulate.map(game => ({ id: 'temp-id-' + Math.random(), ...game })));
             } else {
-                // Check for specific game updates (Pac-Man and Solitaire)
-                const pacmanDoc = fetchedGames.find(g => g.name === "Pac-Man");
-                const solitaireDoc = fetchedGames.find(g => g.name === "Solitaire");
-
-                const defaultPacman = defaultGamesToPopulate.find(g => g.name === "Pac-Man");
-                const defaultSolitaire = defaultGamesToPopulate.find(g => g.name === "Solitaire");
-
                 let needsUpdate = false;
-                if (pacmanDoc && defaultPacman && pacmanDoc.url !== defaultPacman.url) {
-                    console.log(`Updating Pac-Man URL from ${pacmanDoc.url} to ${defaultPacman.url}`);
-                    await setDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/games`, pacmanDoc.id), defaultPacman, { merge: true });
-                    needsUpdate = true;
-                }
-                if (solitaireDoc && defaultSolitaire && solitaireDoc.url !== defaultSolitaire.url) {
-                    console.log(`Updating Solitaire URL from ${solitaireDoc.url} to ${defaultSolitaire.url}`);
-                    await setDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/games`, solitaireDoc.id), defaultSolitaire, { merge: true });
-                    needsUpdate = true;
+                // Check for and add any missing default games to Firestore
+                for (const defaultGame of defaultGamesToPopulate) {
+                    const gameExistsInFirestore = fetchedGames.some(fetchedGame => fetchedGame.name === defaultGame.name);
+                    if (!gameExistsInFirestore) {
+                        console.log(`Adding missing game to Firestore: ${defaultGame.name}`);
+                        await addDoc(gamesCollectionRef, defaultGame);
+                        needsUpdate = true;
+                    }
+                    // Also check for URL updates on existing games (like Pac-Man and Solitaire previously)
+                    const existingGameDoc = fetchedGames.find(g => g.name === defaultGame.name);
+                    if (existingGameDoc && existingGameDoc.url !== defaultGame.url) {
+                        console.log(`Updating URL for existing game: ${defaultGame.name}`);
+                        await setDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/games`, existingGameDoc.id), defaultGame, { merge: true });
+                        needsUpdate = true;
+                    }
                 }
 
-                // If any updates were made, re-fetch the data to ensure the local state is fresh
+                // If any updates were made (new games added or existing URLs updated), re-fetch the data
                 if (needsUpdate) {
                     const updatedSnapshot = await getDocs(gamesCollectionRef);
                     fetchedGames = updatedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    showMessage("Game URLs updated in Firestore!", 2000);
+                    showMessage("Game data updated in Firestore!", 2000); // Consolidated message
                 }
 
                 setGames(fetchedGames);
