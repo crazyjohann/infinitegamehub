@@ -240,7 +240,7 @@ const App = () => {
                 { name: "Wordle", image: "https://placehold.co/300x200/6A5ACD/ffffff?text=Wordle", url: "https://artworksforchange.org/games/wordle/", genre: "Puzzle", developer: "Josh Wardle", rating: 4.3, popularity: 95 },
                 { name: "Solitaire", image: "https://placehold.co/300x200/008B8B/ffffff?text=Solitaire", url: "https://www.solitr.com/", genre: "Card", developer: "Microsoft", rating: 3.7, popularity: 70 },
                 { name: "Chess", image: "https://placehold.co/300x200/404040/ffffff?text=Chess", url: "https://www.mathsisfun.com/games/chess.html", genre: "Board", developer: "Maths Is Fun", rating: 4.0, popularity: 115 },
-                { name: "Roblox", image: "https://placehold.co/300x200/5C007C/ffffff?text=Roblox", url: "https://www.roblox.com", genre: "Hub", developer: "Roblox Corporation", rating: 5.0, popularity: 999 }
+                { name: "Roblox", image: "https://placehold.co/300x200/5C007C/ffffff?text=Roblox", url: "https://now.gg/apps/a/19900/b.html", genre: "Hub", developer: "Roblox Corporation", rating: 5.0, popularity: 999 }
             ];
 
             // If Firestore is empty, populate it with default data
