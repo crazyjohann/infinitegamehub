@@ -7,16 +7,23 @@
     "start": "serve -s build -l $PORT",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "react-scripts start"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-native-web": "^0.19.12",
+    "react-native-svg": "^15.2.0",
+    "expo-linear-gradient": "^12.7.2",
+    "lucide-react": "^0.263.1",
     "firebase": "^10.12.3",
     "react-scripts": "5.0.1",
     "serve": "^14.2.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -27,6 +34,11 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "babel": {
+    "presets": [
+      "react-app"
     ]
   }
 }
